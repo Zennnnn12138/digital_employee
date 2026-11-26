@@ -1,0 +1,38 @@
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: de
+      POSTGRES_PASSWORD: de
+      POSTGRES_DB: digital_employee
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U de -d digital_employee"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+  redis:
+    image: redis:7
+    ports:
+      - "6379:6379"
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql+psycopg://de:de@postgres:5432/digital_employee
+      REDIS_URL: redis://redis:6379/0
+      JWT_SECRET: change-me
+      LLM_PROVIDER: rule
+      CHECKPOINT_PATH: /app/data/checkpoints.sqlite
+    volumes:
+      - de_data:/app/data
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
+volumes:
+  de_data:

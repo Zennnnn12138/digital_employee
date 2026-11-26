@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>数字员工协作台</title>
+  <style>
+    :root {
+      --bg: #f5f6f8;
+      --panel: #ffffff;
+      --side: #f7f8fa;
+      --ink: #1f2329;
+      --muted: #646a73;
+      --faint: #8f959e;
+      --line: #dee0e3;
+      --line-soft: #f0f1f2;
+      --accent: #1456f0;
+      --accent-soft: #e8f3ff;
+      --ok: #2ea121;
+      --warn: #de7802;
+      --warn-bg: #fff7e8;
+      --warn-line: #ffd6a3;
+      --bad: #d83931;
+      --bad-line: #f8c4c1;
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: #e7eef8;
+      font: 13px/1.5 "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    }
+    button, textarea, input { font: inherit; color: inherit; }
+    button { cursor: pointer; }
+    .shell { display: grid; grid-template-columns: 220px minmax(0, 1fr); min-height: 100%; }
+    aside {
+      background: var(--side);
+      border-right: 1px solid var(--line);
+      padding: 12px 10px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .brand { display: flex; gap: 8px; align-items: center; padding: 4px 8px 8px; }
+    .mark {
+      width: 28px; height: 28px; border-radius: 6px; background: var(--accent); color: white;
+      display: grid; place-items: center; font-size: 13px; font-weight: 650;
+    }
+    .brand strong { display: block; font-size: 14px; font-weight: 650; }
+    .brand span { color: var(--faint); font-size: 12px; }
+    .nav-label { margin: 0 8px 4px; color: var(--faint); font-size: 12px; }
+    nav { display: flex; flex-direction: column; gap: 2px; }
+    .nav {
+      height: 32px; width: 100%; border: 0; border-radius: 6px; background: transparent;
+      display: flex; align-items: center; gap: 8px; padding: 0 8px; text-align: left;
+    }
+    .nav span { flex: 1; }
+    .nav svg { flex: none; }
+    .nav:hover { background: #eff0f1; }
+    .nav.active { background: var(--accent-soft); color: var(--accent); }
+    .count {
+      min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px;
+      background: var(--warn); color: white; font-size: 11px; display: grid; place-items: center;
+    }
+    .who { margin-top: auto; display: flex; gap: 8px; align-items: center; padding: 8px; border-top: 1px solid var(--line); }
+    .who img { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; }
+    .avatar {
+      width: 28px; height: 28px; border-radius: 50%; background: #e8f3ff; color: var(--accent);
+      display: grid; place-items: center; font-weight: 650; flex: none;
+    }
+    .who strong { display: block; font-size: 13px; }
+    .who span { color: var(--faint); font-size: 12px; }
+    .people { display: flex; flex-direction: column; gap: 2px; }
+    .person {
+      width: 100%; display: grid; grid-template-columns: 36px minmax(0, 1fr); gap: 8px; align-items: center;
+      padding: 6px 8px; border: 0; border-radius: 8px; background: transparent; text-align: left;
+    }
+    .person img { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; background: #e8eaee; }
+    .person strong { display: block; font-size: 13px; font-weight: 600; }
+    .person small { display: block; color: var(--faint); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .person:hover { background: #eef1f6; }
+    .person.on { background: var(--accent-soft); }
+    .crew { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+    .member {
+      text-align: left; background: white; border: 1px solid var(--line); border-radius: 10px; padding: 14px 14px 12px;
+    }
+    .member:hover { border-color: #b9cdf7; background: #f8fbff; }
+    .member img { width: 52px; height: 52px; border-radius: 50%; object-fit: cover; background: #e8eaee; }
+    .member h3 { margin: 10px 0 0; font-size: 14px; font-weight: 650; }
+    .member p { margin: 2px 0 0; color: var(--muted); font-size: 12px; }
+    .member b { display: block; margin-top: 10px; color: var(--accent); font-size: 13px; font-weight: 650; }
+    .member ul { margin: 8px 0 0; padding: 0; list-style: none; }
+    .member li { position: relative; padding: 2px 0 2px 12px; color: var(--muted); font-size: 12px; }
+    .member li::before { content: ""; position: absolute; left: 0; top: 8px; width: 5px; height: 5px; border-radius: 50%; background: #8eb0f5; }
+    .section-title { display: flex; align-items: baseline; gap: 8px; }
+    .section-title h2 { margin: 0; font-size: 14px; font-weight: 650; }
+    .section-title span { color: var(--faint); font-size: 12px; }
+    .workspace {
+      min-width: 0; display: flex; flex-direction: column; position: relative;
+      background:
+        radial-gradient(920px 460px at 108% -12%, rgba(20, 86, 240, 0.18), transparent 58%),
+        radial-gradient(680px 420px at -8% 108%, rgba(46, 161, 33, 0.12), transparent 52%),
+        radial-gradient(540px 320px at 72% 36%, rgba(222, 120, 2, 0.10), transparent 60%),
+        linear-gradient(180deg, #eef3fb 0%, #f6f1ea 100%);
+    }
+    .workspace::before {
+      content: ""; pointer-events: none; position: absolute; inset: 0;
+      background-image: radial-gradient(rgba(31, 35, 41, 0.16) 1px, transparent 1px);
+      background-size: 18px 18px;
+      mask-image: linear-gradient(180deg, rgba(0,0,0,.45), transparent 78%);
+    }
+    .topbar, #loading, #stage { position: relative; z-index: 1; }
+    .topbar {
+      height: 48px; background: rgba(255,255,255,0.78); backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(222, 224, 227, 0.9);
+      display: flex; align-items: center; justify-content: space-between; padding: 0 20px; gap: 12px;
+    }
+    .crumb { display: flex; align-items: center; gap: 8px; min-width: 0; }
+    .crumb b { font-weight: 650; }
+    .crumb em { color: var(--faint); font-style: normal; }
+    .env {
+      height: 24px; padding: 0 8px; border-radius: 4px; background: var(--warn-bg);
+      color: #8a4b08; border: 1px solid var(--warn-line); font-size: 12px; display: grid; place-items: center;
+    }
+    #stage { padding: 16px 20px 32px; }
+    .page { display: flex; flex-direction: column; gap: 12px; }
+    .metrics { display: grid; grid-template-columns: repeat(4, 1fr); background: white; border: 1px solid var(--line); border-radius: 8px; }
+    .metric { padding: 12px 16px; }
+    .metric + .metric { border-left: 1px solid var(--line); }
+    .metric span { display: block; color: var(--muted); font-size: 12px; }
+    .metric b { display: block; margin-top: 4px; font-size: 22px; font-weight: 650; font-variant-numeric: tabular-nums; }
+    .filters { display: flex; gap: 6px; }
+    .filters button { height: 28px; padding: 0 10px; border-radius: 6px; border: 1px solid transparent; background: transparent; color: var(--muted); }
+    .filters button.on { background: white; border-color: var(--line); color: var(--ink); }
+    .split { display: grid; grid-template-columns: 1.35fr 0.65fr; gap: 12px; }
+    .split.compose { grid-template-columns: 340px minmax(0, 1fr); align-items: start; }
+    .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .panel { background: rgba(255,255,255,0.94); border: 1px solid rgba(255,255,255,0.8); border-radius: 12px; min-width: 0; overflow: hidden; box-shadow: 0 10px 28px rgba(48, 72, 110, 0.06); }
+    .scene {
+      display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(180px, 0.7fr); gap: 12px; align-items: center;
+      padding: 18px 20px; border-radius: 16px; overflow: hidden; position: relative;
+      border: 1px solid rgba(255,255,255,0.75);
+      background:
+        linear-gradient(115deg, rgba(255,255,255,0.42), rgba(255,255,255,0.18)),
+        linear-gradient(125deg, #c9dbff 0%, #ffe7c7 48%, #c8f0df 100%);
+      box-shadow: 0 14px 34px rgba(48, 72, 110, 0.08);
+    }
+    .scene h2 { margin: 4px 0 0; font-size: 22px; line-height: 1.35; letter-spacing: -0.03em; font-weight: 650; }
+    .scene .kicker { margin: 0; color: var(--muted); font-size: 12px; }
+    .scene-art { width: 100%; height: 112px; display: block; }
+    .searchrow { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .searchrow input {
+      height: 32px; flex: 1; min-width: 180px; border: 1px solid var(--line); border-radius: 6px;
+      padding: 0 10px; background: rgba(255,255,255,0.9);
+    }
+    tr[data-action] { cursor: pointer; }
+    tr[data-action]:hover td { background: #eef4ff; }
+    .persona { display: flex; gap: 8px; align-items: center; margin-bottom: 10px; }
+    .persona img { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; }
+    .persona strong { display: block; font-size: 13px; }
+    .persona span { color: var(--faint); font-size: 12px; }
+    .panel > h2 {
+      margin: 0; padding: 10px 14px; font-size: 13px; font-weight: 650;
+      border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center;
+    }
+    .panel > h2 span { color: var(--faint); font-weight: 400; }
+    table { width: 100%; border-collapse: collapse; }
+    th { text-align: left; font-size: 12px; font-weight: 500; color: var(--muted); background: #fafbfc; }
+    th, td { padding: 8px 14px; border-bottom: 1px solid var(--line-soft); }
+    th.num, td.num { text-align: right; font-variant-numeric: tabular-nums; }
+    tbody tr:last-child td { border-bottom: 0; }
+    tbody tr:hover td { background: #f7f8fa; }
+    .rowbtn {
+      width: 100%; min-height: 52px; height: auto; border: 0; border-bottom: 1px solid var(--line-soft); background: white;
+      display: grid; grid-template-columns: 16px minmax(0, 1fr) 88px 64px; gap: 8px; align-items: center;
+      padding: 8px 14px; text-align: left; overflow: hidden; min-width: 0;
+    }
+    .rowbtn:last-child { border-bottom: 0; }
+    .rowbtn:hover { background: #f7f8fa; }
+    .rowbtn > span { min-width: 0; display: flex; flex-direction: column; }
+    .rowbtn strong { font-weight: 550; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .rowbtn small { color: var(--faint); white-space: nowrap; }
+    .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--faint); justify-self: center; flex: none; }
+    .dot.delivered { background: var(--ok); }
+    .dot.awaiting_approval { background: var(--warn); }
+    .dot.handoff, .dot.failed { background: var(--bad); }
+    .dot.clarifying { background: var(--accent); }
+    .badge { font-size: 12px; font-style: normal; color: var(--muted); white-space: nowrap; justify-self: end; line-height: 1.2; }
+    .badge.delivered { color: var(--ok); }
+    .badge.awaiting_approval { color: var(--warn); }
+    .badge.handoff, .badge.failed { color: var(--bad); }
+    textarea {
+      width: 100%; min-height: 132px; resize: vertical; border: 1px solid var(--line);
+      border-radius: 6px; padding: 8px 10px; line-height: 1.6; background: white;
+    }
+    textarea:focus, button:focus-visible { outline: 2px solid #94b4f5; outline-offset: 1px; }
+    .pad { padding: 12px 14px; }
+    .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+    .primary, .quiet, .danger { height: 32px; padding: 0 12px; border-radius: 6px; }
+    .primary { border: 0; background: var(--accent); color: white; }
+    .primary:hover { background: #0e4cd4; }
+    .primary:active, .quiet:active, .danger:active, .person:active, .member:active, .rowbtn:active { transform: scale(0.98); }
+    .step, .notice, .evidence, .scene, .member { animation: rise .32s ease both; }
+    .step:nth-child(2) { animation-delay: .06s; }
+    .step:nth-child(3) { animation-delay: .12s; }
+    .step:nth-child(4) { animation-delay: .18s; }
+    .step:nth-child(5) { animation-delay: .24s; }
+    .step:nth-child(6) { animation-delay: .3s; }
+    .step:nth-child(7) { animation-delay: .36s; }
+    .step:nth-child(8) { animation-delay: .42s; }
+    .step.run i { animation: pulse 1s ease-in-out infinite; }
+    .count { animation: pop .35s ease; }
+    @keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+    @keyframes pulse { 50% { transform: scale(1.7); box-shadow: 0 0 0 6px rgba(20, 86, 240, 0.16); } }
+    @keyframes pop { from { transform: scale(0.6); } to { transform: none; } }
+    @keyframes toastIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+    .quiet { border: 1px solid var(--line); background: white; }
+    .quiet:hover { background: #f7f8fa; }
+    .danger { border: 1px solid var(--bad-line); background: white; color: var(--bad); }
+    .trace { margin: 4px 0 12px; }
+    .step { display: grid; grid-template-columns: 16px minmax(0, 1fr) auto; gap: 8px; position: relative; padding-bottom: 12px; }
+    .step::before { content: ""; position: absolute; left: 5px; top: 14px; bottom: 0; width: 1px; background: var(--line); }
+    .step:last-child { padding-bottom: 0; }
+    .step:last-child::before { display: none; }
+    .step i { width: 8px; height: 8px; margin-top: 5px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 3px white; position: relative; z-index: 1; }
+    .step b { display: block; font-size: 13px; font-weight: 550; }
+    .step small, .ms { color: var(--faint); font-size: 12px; font-variant-numeric: tabular-nums; }
+    .summary { white-space: pre-wrap; margin: 0 0 12px; }
+    .evidence { border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; margin-top: 8px; background: #fafbfc; }
+    .evidence b { display: block; font-size: 12px; color: var(--muted); font-weight: 500; margin-bottom: 2px; }
+    .notice { background: var(--warn-bg); border: 1px solid var(--warn-line); color: #8a4b08; border-radius: 6px; padding: 10px 12px; }
+    .notice.ok { background: #f0fbf3; border-color: #b7ebc6; color: #1d6b32; }
+    .notice strong { display: block; margin-bottom: 2px; }
+    .kv { display: grid; grid-template-columns: 72px minmax(0, 1fr); gap: 6px 12px; margin: 10px 0 0; }
+    .kv dt { color: var(--muted); }
+    .kv dd { margin: 0; }
+    .empty { color: var(--muted); text-align: center; padding: 28px 12px; }
+    #toast {
+      position: fixed; right: 16px; bottom: 16px; display: none; max-width: 320px;
+      background: #1f2329; color: white; border-radius: 6px; padding: 10px 12px; font-size: 13px;
+      animation: toastIn .25s ease;
+    }
+    .approve-call {
+      margin-top: 12px; display: flex; gap: 10px; align-items: center;
+      padding: 10px; border-radius: 10px; background: var(--warn-bg); border: 1px solid var(--warn-line);
+    }
+    .approve-call img { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; flex: none; }
+    .approve-call p { margin: 0; color: #8a4b08; font-size: 12px; }
+    .busy { height: 2px; background: linear-gradient(90deg, var(--accent), #7aa2ff); transform-origin: left; animation: load 0.8s linear infinite; }
+    @keyframes load { from { transform: scaleX(.15); } to { transform: scaleX(1); } }
+    @media (max-width: 980px) {
+      .shell { grid-template-columns: 1fr; }
+      aside { position: sticky; top: 0; z-index: 2; }
+      nav { flex-direction: row; overflow: auto; }
+      .who, .nav-label { display: none; }
+      .people { flex-direction: row; overflow: auto; }
+      .person { min-width: 148px; }
+      .crew { grid-template-columns: 1fr; }
+      .split, .split.compose, .cols, .metrics, .scene { grid-template-columns: 1fr; }
+      .metric + .metric { border-left: 0; border-top: 1px solid var(--line); }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <aside id="side"></aside>
+    <div class="workspace">
+      <header class="topbar" id="top"></header>
+      <div id="loading"></div>
+      <div id="stage"></div>
+    </div>
+  </div>
+  <div id="toast"></div>
+  <script>
+    const STATUS = {
+      delivered: "已交付", awaiting_approval: "待审批", handoff: "转人工",
+      clarifying: "待补充", failed: "失败", running: "执行中", resuming: "恢复中"
+    };
+    const ROLE = { ads: "广告", fulfillment: "履约", aftersales: "售后" };
+    const PEOPLE = [
+      { user: "lead", pass: "Lead#2026", name: "林知夏", line: "运营主管 · 跨岗编排", photo: "/static/portraits/lin.jpg" },
+      { user: "auditor", pass: "Audit#2026", name: "周承衍", line: "审批人 · 写操作复核", photo: "/static/portraits/zhou.jpg" },
+      { user: "ads_ops", pass: "Ads#2026", name: "苏晚宁", line: "广告专员 · 消耗与预算", photo: "/static/portraits/su.jpg" },
+      { user: "shop2_ops", pass: "Shop2#2026", name: "赵启年", line: "二店运营 · SHOP-1002", photo: "/static/portraits/zhao.jpg" }
+    ];
+    const CREW = [
+      { name: "苏晚宁", title: "广告数字员工", line: "消耗核查，预算先审批", photo: "/static/portraits/su.jpg", metric: "只读自动执行", points: ["近 7 天消耗", "在投计划", "上调需审批"], fill: "核查店铺 SHOP-1001 最近7天广告消耗" },
+      { name: "顾清和", title: "履约数字员工", line: "订单、物流与库存", photo: "/static/portraits/gu.jpg", metric: "实时状态不入库", points: ["订单状态", "物流节点", "SKU 库存"], fill: "核查店铺 SHOP-1001 订单履约情况" },
+      { name: "江澄", title: "售后数字员工", line: "工单联查，退款先确认", photo: "/static/portraits/jiang.jpg", metric: "退款为模拟", points: ["工单状态", "适用条款", "退款需审批"], fill: "核查 SHOP-1001 售后工单" }
+    ];
+    const VIEWS = [
+      ["desk", "工作台", iconGrid()],
+      ["compose", "新建任务", iconPen()],
+      ["approvals", "审批队列", iconCheck()],
+      ["ledger", "业务底账", iconTable()]
+    ];
+    const state = {
+      token: localStorage.getItem("de_token") || "",
+      me: null,
+      view: "desk",
+      filter: "all",
+      tasks: [],
+      pending: [],
+      workspace: null,
+      current: null,
+      draft: "先核查 SHOP-1001 最近7天广告消耗和订单履约情况，再给出处理建议",
+      note: "核对过对象和依据",
+      query: "",
+      persona: null,
+      live: [],
+      busy: false
+    };
+
+    document.body.addEventListener("click", onClick);
+    document.body.addEventListener("input", (event) => {
+      if (event.target.id === "draft") state.draft = event.target.value;
+      if (event.target.id === "note") state.note = event.target.value;
+      if (event.target.id === "q") {
+        state.query = event.target.value;
+        const list = document.getElementById("task-list");
+        const count = document.getElementById("task-count");
+        if (list) list.innerHTML = visibleTasks().slice(0, 8).map(taskButton).join("") || `<div class="empty">没有匹配的任务。</div>`;
+        if (count) count.textContent = String(visibleTasks().length);
+      }
+    });
+    document.body.addEventListener("keydown", (event) => {
+      if ((event.ctrlKey || event.metaKey) && event.key === "Enter" && state.view === "compose" && !state.busy) submitTask();
+    });
+    boot();
+
+    async function boot() {
+      if (state.token) {
+        const me = await api("/api/me");
+        if (me) state.me = me;
+        else state.token = "";
+      }
+      if (state.me) await refresh();
+      paint();
+    }
+
+    async function refresh() {
+      const jobs = [api("/api/tasks"), api("/api/workspace")];
+      if (state.me && state.me.can_approve) jobs.push(api("/api/approvals/pending"));
+      const [tasks, workspace, pending] = await Promise.all(jobs);
+      if (tasks) state.tasks = tasks.items || [];
+      if (workspace) state.workspace = workspace;
+      state.pending = pending && pending.items ? pending.items : [];
+      if (state.current) {
+        const fresh = state.tasks.find((item) => item.task_id === state.current.task_id);
+        if (fresh) state.current = fresh;
+      }
+    }
+
+    function paint() {
+      document.getElementById("side").innerHTML = sideHtml();
+      document.getElementById("top").innerHTML = topHtml();
+      document.getElementById("loading").innerHTML = state.busy ? '<div class="busy"></div>' : "";
+      const stage = document.getElementById("stage");
+      stage.innerHTML = "";
+      stage.appendChild(stageNode());
+    }
+
+    function sideHtml() {
+      const me = state.me;
+      const nav = VIEWS.map(([id, label, icon]) => {
+        const badge = id === "approvals" && state.pending.length ? `<em class="count">${state.pending.length}</em>` : "";
+        return `<button type="button" class="nav ${state.view === id ? "active" : ""}" data-action="nav" data-view="${id}">${icon}<span>${label}</span>${badge}</button>`;
+      }).join("");
+      const people = PEOPLE.map((person) => `
+        <button type="button" class="person ${me && me.username === person.user ? "on" : ""}" data-action="login" data-user="${person.user}" data-pass="${person.pass}">
+          <img src="${person.photo}" alt="">
+          <span><strong>${person.name}</strong><small>${person.line}</small></span>
+        </button>`).join("");
+      const current = me ? PEOPLE.find((person) => person.user === me.username) : null;
+      const face = current ? `<img src="${current.photo}" alt="">` : `<div class="avatar">?</div>`;
+      const who = current
+        ? `<strong>${current.name}</strong><span>${current.line}</span>`
+        : `<strong>未登录</strong><span>点头像进入岗位</span>`;
+      return `
+        <div class="brand"><div class="mark">岗</div><div><strong>数字员工</strong><span>运营协作台</span></div></div>
+        <div><p class="nav-label">工作区</p><nav>${nav}</nav></div>
+        <div class="who">${face}<div>${who}</div></div>
+        <div><p class="nav-label">切换岗位</p><div class="people">${people}</div></div>`;
+    }
+
+    function topHtml() {
+      const titles = { desk: "工作台", compose: "新建任务", approvals: "审批队列", ledger: "业务底账" };
+      const shop = state.workspace && state.workspace.shops && state.workspace.shops[0];
+      const sub = shop ? `${shop.name} · ${shop.id}` : "未选择店铺";
+      return `<div class="crumb"><b>数字员工</b><em>/</em><span>${titles[state.view]}</span><em>/</em><span>${escapeText(sub)}</span></div><div class="env">模拟环境</div>`;
+    }
+
+    function stageNode() {
+      const wrap = document.createElement("div");
+      wrap.className = "page";
+      if (!state.me) {
+        wrap.innerHTML = `<section class="panel"><div class="empty">点左侧头像进入岗位。主管发起任务，审批人放行写操作。</div></section>`;
+        return wrap;
+      }
+      if (state.view === "desk") wrap.innerHTML = deskHtml();
+      if (state.view === "compose") wrap.appendChild(composeNode());
+      if (state.view === "approvals") wrap.innerHTML = approvalsHtml();
+      if (state.view === "ledger") wrap.innerHTML = ledgerHtml();
+      return wrap;
+    }
+
+    function deskHtml() {
+      const board = state.workspace || {};
+      const counts = board.counts || {};
+      const metrics = [
+        ["待审批", counts.awaiting_approval || 0],
+        ["已交付", counts.delivered || 0],
+        ["转人工", counts.handoff || 0],
+        ["全部任务", counts.total || 0]
+      ].map(([label, value]) => `<div class="metric"><span>${label}</span><b>${value}</b></div>`).join("");
+      const filters = [["all", "全部"], ["awaiting_approval", "待审批"], ["delivered", "已交付"], ["handoff", "转人工"]]
+        .map(([id, label]) => `<button type="button" class="${state.filter === id ? "on" : ""}" data-action="filter" data-filter="${id}">${label}</button>`).join("");
+      const tasks = visibleTasks().slice(0, 8).map(taskButton).join("") || `<div class="empty">没有匹配的任务。</div>`;
+      const crew = CREW.map((member) => `
+        <button class="member" type="button" data-action="fill" data-run="1" data-persona="${member.name}" data-fill="${escapeText(member.fill)}">
+          <img src="${member.photo}" alt="">
+          <h3>${member.name}</h3>
+          <p>${member.title}</p>
+          <p>${member.line}</p>
+          <b>${member.metric}</b>
+          <ul>${member.points.map((point) => `<li>${point}</li>`).join("")}</ul>
+        </button>`).join("");
+      const campaigns = board.campaigns || [];
+      const orders = board.orders || [];
+      const tickets = board.tickets || [];
+      return `
+        <section class="scene">
+          <div>
+            <p class="kicker">${escapeText(shopLine(board))}</p>
+            <h2>${escapeText(briefing(board))}</h2>
+          </div>
+          ${sceneArt()}
+        </section>
+        <div class="section-title"><h2>数字员工</h2><span>点卡片发起对应核查</span></div>
+        <div class="crew">${crew}</div>
+        <div class="metrics">${metrics}</div>
+        <div class="split">
+          <section class="panel">
+            <h2>任务 <span id="task-count">${visibleTasks().length}</span></h2>
+            <div class="pad searchrow">
+              <input id="q" value="${escapeText(state.query)}" placeholder="搜索任务原文或店铺">
+              <div class="filters">${filters}</div>
+            </div>
+            <div id="task-list">${tasks}</div>
+          </section>
+          ${tablePanel("在投计划", ["计划", "日预算", "近 7 天"], campaigns.map((item) => [item.id + "  " + item.name, money(item.daily_budget), money(item.spend_7d)]), [1, 2], campaigns.map((item) => `查看店铺 ${item.shop_id} 广告计划 ${item.id} 的预算和消耗`))}
+        </div>
+        <div class="cols">
+          ${tablePanel("订单", ["单号", "状态", "物流"], orders.map((item) => [item.id, orderStatus(item.status), item.logistics]), [], orders.map((item) => `查询 ${item.shop_id} 订单 ${item.id} 的物流状态`))}
+          ${tablePanel("工单", ["单号", "状态", "原因"], tickets.map((item) => [item.id, ticketStatus(item.status), item.reason]), [], tickets.map((item) => `查询 ${item.shop_id} 工单 ${item.id} 并核对订单`))}
+        </div>`;
+    }
+
+    function composeNode() {
+      const wrap = document.createElement("div");
+      wrap.className = "split compose";
+      const form = document.createElement("section");
+      form.className = "panel";
+      form.innerHTML = `<h2>任务原文</h2><div class="pad"></div>`;
+      const pad = form.querySelector(".pad");
+      if (state.persona) {
+        const who = document.createElement("div");
+        who.className = "persona";
+        who.innerHTML = `<img alt=""><div><strong></strong><span></span></div>`;
+        who.querySelector("img").src = state.persona.photo;
+        who.querySelector("strong").textContent = state.persona.name;
+        who.querySelector("span").textContent = state.persona.title;
+        pad.appendChild(who);
+      }
+      const area = document.createElement("textarea");
+      area.id = "draft";
+      area.value = state.draft;
+      pad.appendChild(area);
+      const row = document.createElement("div");
+      row.className = "actions";
+      row.innerHTML = `
+        <button class="primary" type="button" data-action="submit">提交</button>
+        <button class="quiet" type="button" data-action="fill" data-fill="核查店铺 SHOP-1001 最近7天广告消耗">只读消耗</button>
+        <button class="quiet" type="button" data-action="fill" data-fill="先核查 SHOP-1001 最近7天广告消耗和订单履约情况，再给出处理建议">跨岗体检</button>
+        <button class="quiet" type="button" data-action="fill" data-fill="把店铺 SHOP-1001 广告计划 C-501 的日预算调整到 320，原因是活动加码">调整预算</button>
+        <button class="quiet" type="button" data-action="fill" data-fill="对店铺 SHOP-1001 订单 O-9003 执行退款 39.9 元，原因是尺码不合适">模拟退款</button>`;
+      pad.appendChild(row);
+      const detail = document.createElement("section");
+      detail.className = "panel";
+      detail.innerHTML = `<h2>运行记录</h2>`;
+      const body = document.createElement("div");
+      body.className = "pad";
+      body.id = "run-body";
+      body.appendChild(taskDetail(state.current));
+      detail.appendChild(body);
+      wrap.append(form, detail);
+      return wrap;
+    }
+
+    function approvalsHtml() {
+      if (!state.me.can_approve) return `<section class="panel"><div class="empty">当前岗位不能审批。切换到审批人后处理队列。</div></section>`;
+      if (!state.pending.length) return `<section class="panel"><div class="empty">没有待审批的写操作。</div></section>`;
+      return `<div class="page">${state.pending.map(approvalCard).join("")}</div>`;
+    }
+
+    function ledgerHtml() {
+      const board = state.workspace || {};
+      const campaigns = board.campaigns || [];
+      const orders = board.orders || [];
+      const tickets = board.tickets || [];
+      const inventory = board.inventory || [];
+      return `
+        <div class="section-title"><h2>业务底账</h2><span>点一行发起核查</span></div>
+        <div class="cols">
+          ${tablePanel("广告计划", ["计划", "日预算", "近 7 天"], campaigns.map((item) => [item.id + "  " + item.name, money(item.daily_budget), money(item.spend_7d)]), [1, 2], campaigns.map((item) => `查看店铺 ${item.shop_id} 广告计划 ${item.id} 的预算和消耗`))}
+          ${tablePanel("订单", ["单号", "状态", "金额", "物流"], orders.map((item) => [item.id, orderStatus(item.status), money(item.amount), item.logistics]), [2], orders.map((item) => `查询 ${item.shop_id} 订单 ${item.id} 的物流状态`))}
+        </div>
+        <div class="cols">
+          ${tablePanel("工单", ["单号", "关联订单", "状态", "原因"], tickets.map((item) => [item.id, item.order_id, ticketStatus(item.status), item.reason]), [], tickets.map((item) => `查询 ${item.shop_id} 工单 ${item.id} 并核对订单`))}
+          ${tablePanel("库存", ["SKU", "可用", "占用", "仓库"], inventory.map((item) => [item.sku, String(item.available), String(item.reserved), item.warehouse]), [1, 2], inventory.map((item) => `看看 ${item.shop_id} ${item.sku} 库存`))}
+        </div>`;
+    }
+
+    function tablePanel(title, heads, rows, numericIndexes = [], fills = []) {
+      const head = heads.map((item, index) => `<th class="${numericIndexes.includes(index) ? "num" : ""}">${escapeText(item)}</th>`).join("");
+      const body = rows.length
+        ? rows.map((row, rowIndex) => {
+            const fill = fills[rowIndex];
+            const attrs = fill ? ` data-action="fill" data-run="1" data-fill="${escapeText(fill)}"` : "";
+            return `<tr${attrs}>${row.map((cell, index) => `<td class="${numericIndexes.includes(index) ? "num" : ""}">${escapeText(cell)}</td>`).join("")}</tr>`;
+          }).join("")
+        : `<tr><td colspan="${heads.length}">没有记录</td></tr>`;
+      return `<section class="panel"><h2>${escapeText(title)} <span>${rows.length}</span></h2><table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></section>`;
+    }
+
+    function taskButton(task) {
+      const roles = (task.roles || []).map((role) => ROLE[role] || role).join(" / ") || "待解析";
+      return `<button class="rowbtn" type="button" data-action="open" data-id="${escapeText(task.task_id)}"><i class="dot ${escapeText(task.status)}"></i><span><strong>${escapeText(task.message || "未命名任务")}</strong><small>${escapeText(task.shop_id || "未识别店铺")} · ${escapeText(roles)}</small></span><small>${escapeText(when(task.updated_at))}</small><em class="badge ${escapeText(task.status)}">${STATUS[task.status] || escapeText(task.status)}</em></button>`;
+    }
+
+    function taskDetail(task) {
+      const box = document.createElement("div");
+      if (!task) {
+        if (state.busy) return liveTrace();
+        box.className = "empty";
+        box.textContent = "提交后在这里查看节点、证据和是否已经落账。";
+        return box;
+      }
+      const head = document.createElement("div");
+      head.innerHTML = `<em class="badge ${escapeText(task.status)}">${STATUS[task.status] || escapeText(task.status)}</em>`;
+      box.appendChild(head);
+      const timeline = document.createElement("div");
+      timeline.className = "trace";
+      (task.trace || []).forEach((step) => {
+        const row = document.createElement("div");
+        row.className = "step";
+        row.innerHTML = `<i></i><div><b></b><small></small></div><span class="ms"></span>`;
+        row.children[1].children[0].textContent = step.label || step.node;
+        row.children[1].children[1].textContent = { ok: "完成", approved: "已通过", rejected: "已拒绝", handoff: "转出", partial: "部分完成", stopped: "已停止" }[step.status] || step.status || "";
+        row.children[2].textContent = `${step.elapsed_ms || 0} ms`;
+        timeline.appendChild(row);
+      });
+      box.appendChild(timeline);
+      const summary = document.createElement("p");
+      summary.className = "summary";
+      summary.textContent = (task.delivery && task.delivery.summary) || task.handoff_reason || "等待下一步";
+      box.appendChild(summary);
+      (task.delivery && task.delivery.evidence || []).forEach((item) => {
+        const card = document.createElement("div");
+        card.className = "evidence";
+        card.innerHTML = `<b></b><div></div>`;
+        card.children[0].textContent = sourceLabel(item.source);
+        card.children[1].textContent = item.summary || "";
+        box.appendChild(card);
+      });
+      if (task.approval && task.status === "awaiting_approval") box.appendChild(approvalNode(task));
+      (task.delivery && task.delivery.writes || []).forEach((item) => box.appendChild(writeNode(item)));
+      if (task.status === "awaiting_approval" && state.me && !state.me.can_approve) box.appendChild(handoffCard());
+      return box;
+    }
+
+    function liveTrace() {
+      const box = document.createElement("div");
+      const steps = state.live.length ? state.live : ["正在理解任务"];
+      steps.forEach((label, index) => {
+        const row = document.createElement("div");
+        row.className = "step" + (index === steps.length - 1 ? " run" : "");
+        row.innerHTML = `<i></i><div><b></b><small></small></div><span class="ms"></span>`;
+        row.children[1].children[0].textContent = label;
+        row.children[1].children[1].textContent = index === steps.length - 1 ? "进行中" : "完成";
+        box.appendChild(row);
+      });
+      return box;
+    }
+
+    function handoffCard() {
+      const auditor = PEOPLE.find((person) => person.user === "auditor");
+      const card = document.createElement("div");
+      card.className = "approve-call";
+      card.innerHTML = `<img alt=""><div><strong>写操作已挂起</strong><p>需要审批人确认后才会落账。</p></div>`;
+      card.querySelector("img").src = auditor.photo;
+      const button = document.createElement("button");
+      button.className = "primary";
+      button.type = "button";
+      button.dataset.action = "login";
+      button.dataset.user = auditor.user;
+      button.dataset.pass = auditor.pass;
+      button.textContent = `交给${auditor.name}`;
+      card.appendChild(button);
+      return card;
+    }
+
+    function approvalCard(task) {
+      const writes = (task.approval && task.approval.writes) || [];
+      const rows = writes.map((item) => `
+        <div class="notice"><strong>写操作待确认</strong>${escapeText(item.risk || "批准后才会写入测试环境。")}</div>
+        <dl class="kv">
+          <dt>工具</dt><dd>${escapeText(item.tool || "")}</dd>
+          <dt>对象</dt><dd>${escapeText(item.target || "")}</dd>
+          <dt>执行前</dt><dd>${escapeText(pretty(item.before))}</dd>
+          <dt>申请</dt><dd>${escapeText(pretty(item.params))}</dd>
+        </dl>`).join("");
+      return `<section class="panel"><h2>${escapeText(task.message || "审批单")}</h2><div class="pad">${rows}<div class="actions"><button class="primary" type="button" data-action="decide" data-id="${escapeText(task.task_id)}" data-decision="approved">同意</button><button class="danger" type="button" data-action="decide" data-id="${escapeText(task.task_id)}" data-decision="rejected">拒绝</button></div></div></section>`;
+    }
+
+    function approvalNode(task) {
+      const box = document.createElement("div");
+      const writes = task.approval.writes || [];
+      writes.forEach((item) => {
+        const notice = document.createElement("div");
+        notice.className = "notice";
+        notice.innerHTML = `<strong>写操作待确认</strong>`;
+        const text = document.createElement("div");
+        text.textContent = item.risk || "批准后才会写入测试环境。";
+        notice.appendChild(text);
+        const list = document.createElement("dl");
+        list.className = "kv";
+        [["工具", item.tool], ["对象", item.target], ["执行前", pretty(item.before)], ["申请", pretty(item.params)]].forEach(([key, value]) => {
+          const dt = document.createElement("dt");
+          dt.textContent = key;
+          const dd = document.createElement("dd");
+          dd.textContent = value || "—";
+          list.append(dt, dd);
+        });
+        box.append(notice, list);
+      });
+      if (state.me.can_approve) {
+        const note = document.createElement("textarea");
+        note.id = "note";
+        note.value = state.note;
+        note.style.minHeight = "72px";
+        note.style.marginTop = "10px";
+        const row = document.createElement("div");
+        row.className = "actions";
+        row.innerHTML = `<button class="primary" type="button" data-action="decide" data-id="${escapeText(task.task_id)}" data-decision="approved">同意</button><button class="danger" type="button" data-action="decide" data-id="${escapeText(task.task_id)}" data-decision="rejected">拒绝</button>`;
+        box.append(note, row);
+      } else {
+        const tip = document.createElement("p");
+        tip.className = "summary";
+        tip.textContent = "发起人不能审批自己的任务。切换到审批人后处理。";
+        box.appendChild(tip);
+      }
+      return box;
+    }
+
+    function writeNode(item) {
+      const box = document.createElement("div");
+      const notice = document.createElement("div");
+      notice.className = "notice ok";
+      notice.innerHTML = `<strong>已经落账</strong>`;
+      const text = document.createElement("div");
+      text.textContent = `${item.tool || ""} · ${item.target || ""} · ${item.operation_id || ""}`;
+      notice.appendChild(text);
+      const list = document.createElement("dl");
+      list.className = "kv";
+      [["执行前", pretty(item.before)], ["执行后", pretty(item.after)]].forEach(([key, value]) => {
+        const dt = document.createElement("dt");
+        dt.textContent = key;
+        const dd = document.createElement("dd");
+        dd.textContent = value;
+        list.append(dt, dd);
+      });
+      box.append(notice, list);
+      return box;
+    }
+
+    async function onClick(event) {
+      const target = event.target.closest("[data-action]");
+      if (!target || state.busy && target.dataset.action !== "nav") return;
+      const action = target.dataset.action;
+      if (action === "nav") { state.view = target.dataset.view; paint(); }
+      if (action === "filter") { state.filter = target.dataset.filter; paint(); }
+      if (action === "login") await login(target.dataset.user, target.dataset.pass);
+      if (action === "fill") {
+        state.draft = target.dataset.fill;
+        state.persona = CREW.find((member) => member.name === target.dataset.persona) || null;
+        state.view = "compose";
+        if (target.dataset.run === "1") await submitTask();
+        else paint();
+      }
+      if (action === "open") {
+        state.current = state.tasks.find((item) => item.task_id === target.dataset.id) || state.pending.find((item) => item.task_id === target.dataset.id);
+        state.view = "compose";
+        paint();
+      }
+      if (action === "submit") await submitTask();
+      if (action === "decide") await decide(target.dataset.id, target.dataset.decision);
+    }
+
+    async function login(username, password) {
+      const body = await api("/api/auth/login", { method: "POST", body: { username, password } });
+      if (!body) return paint();
+      state.token = body.access_token;
+      localStorage.setItem("de_token", state.token);
+      state.me = body;
+      await refresh();
+      paint();
+    }
+
+    async function submitTask() {
+      if (state.busy) return;
+      state.busy = true;
+      state.current = null;
+      state.view = "compose";
+      state.live = ["正在理解任务"];
+      paint();
+      const timer = setInterval(() => {
+        const script = ["正在理解任务", "正在路由岗位", "正在核查业务对象", "正在校验证据"];
+        if (state.live.length < script.length) state.live = script.slice(0, state.live.length + 1);
+        paintRun();
+      }, 320);
+      const body = await api("/api/tasks", { method: "POST", body: { message: state.draft } });
+      clearInterval(timer);
+      state.busy = false;
+      state.live = [];
+      if (!body) return paint();
+      state.current = body;
+      state.view = "compose";
+      await refresh();
+      state.current = state.tasks.find((item) => item.task_id === body.task_id) || body;
+      paint();
+      if (body.status === "awaiting_approval") toast("写操作已挂起，等待审批人确认");
+      else if (body.status === "delivered") toast("核查完成，证据已汇总");
+      else if (body.status === "handoff") toast(body.handoff_reason || "已转人工");
+    }
+
+    function paintRun() {
+      const host = document.getElementById("run-body");
+      if (!host) return paint();
+      host.replaceChildren(taskDetail(state.current));
+    }
+
+    async function decide(taskId, decision) {
+      if (state.busy) return;
+      state.busy = true; paint();
+      const body = await api(`/api/tasks/${taskId}/approvals`, { method: "POST", body: { decision, note: state.note } });
+      state.busy = false;
+      if (!body) return paint();
+      state.current = body;
+      state.view = "compose";
+      await refresh();
+      state.current = state.tasks.find((item) => item.task_id === body.task_id) || body;
+      paint();
+    }
+
+    async function api(path, options = {}) {
+      const headers = { "Content-Type": "application/json" };
+      if (state.token) headers.Authorization = `Bearer ${state.token}`;
+      try {
+        const response = await fetch(path, {
+          method: options.method || "GET",
+          headers,
+          body: options.body ? JSON.stringify(options.body) : undefined
+        });
+        const body = await response.json().catch(() => ({}));
+        if (!response.ok) { toast(body.detail || "请求没有完成"); return null; }
+        return body;
+      } catch (error) {
+        toast("网络中断");
+        return null;
+      }
+    }
+
+    function toast(message) {
+      const node = document.getElementById("toast");
+      node.textContent = message;
+      node.style.display = "block";
+      clearTimeout(toast.timer);
+      toast.timer = setTimeout(() => { node.style.display = "none"; }, 2600);
+    }
+
+    function visibleTasks() {
+      const query = (state.query || "").trim().toLowerCase();
+      return state.tasks.filter((item) => {
+        if (state.filter !== "all" && item.status !== state.filter) return false;
+        if (!query) return true;
+        return `${item.message || ""} ${item.shop_id || ""}`.toLowerCase().includes(query);
+      });
+    }
+    function shopLine(board) {
+      const shop = (board.shops || [])[0];
+      return shop ? `${shop.name} · ${shop.site} · ${shop.category}` : "当前店铺";
+    }
+    function briefing(board) {
+      const pending = (board.counts || {}).awaiting_approval || 0;
+      const openTickets = (board.tickets || []).filter((item) => item.status !== "resolved").length;
+      const low = (board.inventory || []).filter((item) => item.available <= 5).map((item) => item.sku);
+      const parts = [];
+      parts.push(pending ? `有 ${pending} 笔写操作等审批` : "没有待审批的写入");
+      parts.push(openTickets ? `${openTickets} 张工单还没关闭` : "工单都已关闭");
+      if (low.length) parts.push(`${low.join("、")} 库存偏低`);
+      return parts.join("，");
+    }
+    function sceneArt() {
+      return `<svg class="scene-art" viewBox="0 0 360 120" aria-hidden="true">
+        <rect x="18" y="58" width="86" height="42" rx="6" fill="#ffffff" opacity="0.9"/>
+        <rect x="28" y="68" width="22" height="16" rx="2" fill="#d7e4ff"/>
+        <rect x="56" y="68" width="22" height="16" rx="2" fill="#f8e2c8"/>
+        <path d="M18 58 L61 38 L104 58" fill="#8eb0f5"/>
+        <rect x="128" y="46" width="54" height="40" rx="6" fill="#ffffff"/>
+        <rect x="136" y="56" width="38" height="6" rx="3" fill="#d7e4ff"/>
+        <rect x="136" y="68" width="26" height="6" rx="3" fill="#b7ebc6"/>
+        <circle cx="230" cy="42" r="16" fill="#fff7e8" stroke="#ffd6a3"/>
+        <path d="M222 42 h16 M230 34 v16" stroke="#de7802" stroke-width="2"/>
+        <rect x="262" y="64" width="28" height="22" rx="4" fill="#1456f0"/>
+        <rect x="294" y="52" width="28" height="34" rx="4" fill="#2ea121"/>
+        <rect x="326" y="70" width="20" height="16" rx="4" fill="#de7802"/>
+      </svg>`;
+    }
+    function sourceLabel(source) {
+      return { query_ad_spend: "广告消耗", query_ad_campaign: "广告计划", query_orders: "订单", query_order_logistics: "物流", query_inventory: "库存", query_tickets: "工单", search_policy: "政策条款" }[source] || source || "证据";
+    }
+    function orderStatus(value) { return { shipped: "运输中", delivered: "已签收" }[value] || value || ""; }
+    function ticketStatus(value) { return { open: "待处理", processing: "处理中", resolved: "已解决" }[value] || value || ""; }
+    function money(value) { return `${Number(value || 0).toFixed(2)} USD`; }
+    function when(value) { return value ? value.slice(5, 16).replace("T", " ") : ""; }
+    function pretty(obj) {
+      if (!obj || typeof obj !== "object") return "—";
+      const names = { daily_budget: "日预算", spend_7d: "近7天", status: "状态", refunded_amount: "已退金额", note: "备注", new_daily_budget: "目标预算", amount: "金额", reason: "原因", new_status: "目标状态", campaign_id: "计划", order_id: "订单", ticket_id: "工单", shop_id: "店铺" };
+      const skip = new Set(["operation_id", "task_id", "expected_daily_budget", "expected_status"]);
+      const parts = Object.entries(obj).filter(([key]) => !skip.has(key)).map(([key, value]) => `${names[key] || key} ${value}`);
+      return parts.join("，") || "—";
+    }
+    function escapeText(value) {
+      return String(value ?? "").replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[char]));
+    }
+    function iconGrid() { return '<svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="2" y="2" width="5" height="5" rx="1"/><rect x="9" y="2" width="5" height="5" rx="1"/><rect x="2" y="9" width="5" height="5" rx="1"/><rect x="9" y="9" width="5" height="5" rx="1"/></svg>'; }
+    function iconPen() { return '<svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M9 3.5 12.5 7 6 13.5H2.5V10z"/><path d="M8 4.5 11.5 8"/></svg>'; }
+    function iconCheck() { return '<svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="2.5" y="2.5" width="11" height="11" rx="2"/><path d="M5 8.2 7.1 10.2 11 6.2"/></svg>'; }
+    function iconTable() { return '<svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="2" y="3" width="12" height="10" rx="1"/><path d="M2 6.5h12M6 6.5V13"/></svg>'; }
+  </script>
+</body>
+</html>
